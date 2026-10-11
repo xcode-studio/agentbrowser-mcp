@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime/debug"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -18,9 +20,23 @@ import (
 	mcpsrv "github.com/xcode-studio/agentbrowser-mcp/internal/mcp"
 )
 
-const version = "2.0.0"
+// version is set by release builds (-X main.version=...). Without it, the
+// module version Go stamps into the binary is used: the tag for go install,
+// or a pseudo-version for go build in a clone.
+var version = ""
+
+func buildVersion() string {
+	if version != "" {
+		return version
+	}
+	if bi, ok := debug.ReadBuildInfo(); ok && bi.Main.Version != "" && bi.Main.Version != "(devel)" {
+		return strings.TrimPrefix(bi.Main.Version, "v")
+	}
+	return "dev"
+}
 
 func main() {
+	ver := buildVersion()
 	cfg, err := config.Load(os.Args[1:])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "agent-browser-mcp: configuration error:", err)
@@ -28,9 +44,9 @@ func main() {
 	}
 
 	mgr := browser.NewManager(cfg)
-	s, shutdown := mcpsrv.NewServer(version, cfg, mgr)
+	s, shutdown := mcpsrv.NewServer(ver, cfg, mgr)
 
-	fmt.Fprintf(os.Stderr, "agent-browser-mcp %s: listening on stdio; %s\n", version, mgr.CheckVersion(context.Background()))
+	fmt.Fprintf(os.Stderr, "agent-browser-mcp %s: listening on stdio; %s\n", ver, mgr.CheckVersion(context.Background()))
 	stop := sync.OnceFunc(func() { shutdown(context.Background()) })
 	// A client stops a stdio server with SIGINT, then SIGTERM and SIGKILL
 	// within half a second (Claude Code on reconnect). ServeStdio first waits
