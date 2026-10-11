@@ -109,7 +109,9 @@ Use Claude in Chrome for tasks in your own browser and quick checks of a page. U
    agent-browser install
    ```
 
-2. Build the server (Go 1.26+):
+2. Download the server for your system from [Releases](https://github.com/xcode-studio/agentbrowser-mcp/releases) and unpack it. On macOS, a binary downloaded with a browser is quarantined; clear it once with `xattr -d com.apple.quarantine agent-browser-mcp`.
+
+   Or build it (Go 1.26+):
 
    ```bash
    git clone https://github.com/xcode-studio/agentbrowser-mcp.git
@@ -301,6 +303,7 @@ go build -o agent-browser-mcp . && go run docs/demo/main.go   # re-record the de
 - **Fakes:** unit tests run every tool against a fake agent-browser that records its arguments, and a fake Chrome that records protocol calls.
 - **Guards:** coverage tests fail if a tool or enum value has no test case. Budget tests keep `tools/list` under 48 KB and the instructions under Claude Code's 2,048-character limit.
 - **Lighthouse:** set `LIGHTHOUSE_PATH=$(which lighthouse)` to include the Lighthouse audit in the integration run.
+- **Releases:** push a tag such as `v2.0.1`. GitHub Actions runs the tests, builds macOS, Linux and Windows binaries (amd64 and arm64) with [GoReleaser](https://goreleaser.com), and publishes them with a changelog. `goreleaser release --snapshot --clean` builds the same archives locally into `dist/`.
 
 ## 🤝 Contributing
 

@@ -1,0 +1,56 @@
+# Builds the release binaries when a v* tag is pushed (.github/workflows/release.yml).
+# Try it locally: goreleaser release --snapshot --clean
+version: 2
+
+project_name: agent-browser-mcp
+
+before:
+  hooks:
+    - go mod tidy -diff
+
+builds:
+  - binary: agent-browser-mcp
+    env:
+      - CGO_ENABLED=0
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: Fixes
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: Other changes
+      order: 999
+  filters:
+    exclude:
+      - "^Merge "
+
+release:
+  prerelease: auto
+  header: |
+    Download the archive for your system, unpack it, and add the `agent-browser-mcp` binary to your MCP client (see the [Quick start](https://github.com/xcode-studio/agentbrowser-mcp#-quick-start)). It needs the [agent-browser](https://github.com/vercel-labs/agent-browser) CLI 0.38.0 or newer.
+
+    On macOS, a binary downloaded with a browser is quarantined; clear it once with `xattr -d com.apple.quarantine agent-browser-mcp`.
