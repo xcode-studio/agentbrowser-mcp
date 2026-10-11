@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -43,11 +44,17 @@ func MaybeRun() {
 	}
 	switch name {
 	case binaryName:
-		os.Exit(serve(dir, os.Args[1:]))
+		exit(serve(dir, os.Args[1:]))
 	case lighthouseName:
-		os.Exit(serveLighthouse(dir, os.Args[1:]))
+		exit(serveLighthouse(dir, os.Args[1:]))
 	}
 }
+
+// exit ends the fake without the race detector's shutdown: os.Exit(0) in a
+// -race binary sleeps for GORACE atexit_sleep_ms (one second by default) to
+// catch races at exit, and the fake runs once per CLI call, so race test runs
+// spent most of their time asleep.
+func exit(code int) { syscall.Exit(code) }
 
 // Install creates a fake CLI for one test: a symlink to the test binary in the
 // test's own state directory. Nothing is set in the environment, so tests can
